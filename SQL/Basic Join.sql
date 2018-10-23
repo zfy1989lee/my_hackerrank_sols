@@ -43,3 +43,66 @@ select if(grade > 7, name, null), grade, marks
 from students, grades 
 where marks between min_mark and max_mark 
 order by grade desc, name, marks
+
+--Top competiors
+--我写的第一个版本，有点笨
+--注意此题有bug， 题目的数据库有些人的分数是超过满分的。。。hhh
+SELECT new_table.hacker_id, name
+FROM
+(
+    SELECT Submissions.hacker_id, COUNT(*) as cnt    
+    FROM (
+        Submissions
+        LEFT JOIN
+        Challenges ON Submissions.challenge_id = Challenges.challenge_id
+        LEFT JOIN
+        Difficulty ON Challenges.difficulty_level = Difficulty.difficulty_level
+    ) 
+    WHERE Submissions.score = Difficulty.score
+    GROUP BY Submissions.hacker_id    
+) new_table 
+LEFT JOIN Hackers ON Hackers.hacker_id = new_table.hacker_id
+WHERE cnt > 1
+ORDER BY cnt DESC, new_table.hacker_id ASC
+--换个写法看看, GROUP BY 可以用两列的
+SELECT new_table.hacker_id, name
+FROM
+(
+    SELECT Submissions.hacker_id, name, COUNT(*) as cnt    
+    FROM (
+        Submissions
+        LEFT JOIN 
+        Hackers ON Hackers.hacker_id = Submissions.hacker_id
+        LEFT JOIN
+        Challenges ON Submissions.challenge_id = Challenges.challenge_id
+        LEFT JOIN
+        Difficulty ON Challenges.difficulty_level = Difficulty.difficulty_level
+    ) 
+    WHERE Submissions.score = Difficulty.score
+    GROUP BY Submissions.hacker_id, Hackers.name    
+) new_table 
+WHERE new_table.cnt > 1
+ORDER BY cnt DESC, new_table.hacker_id ASC
+--其实我们可以去掉一层SELECT， 注意用HAVING 而不是where count(*)
+SELECT Submissions.hacker_id, name    
+FROM (
+    Submissions
+    LEFT JOIN 
+    Hackers ON Hackers.hacker_id = Submissions.hacker_id
+    LEFT JOIN
+    Challenges ON Submissions.challenge_id = Challenges.challenge_id
+    LEFT JOIN
+    Difficulty ON Challenges.difficulty_level = Difficulty.difficulty_level
+) 
+WHERE Submissions.score = Difficulty.score
+GROUP BY Submissions.hacker_id, name    
+HAVING COUNT(*) > 1
+ORDER BY COUNT(*) DESC, Submissions.hacker_id ASC
+
+
+
+
+
+
+
+
