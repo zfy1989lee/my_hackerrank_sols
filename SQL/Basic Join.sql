@@ -100,8 +100,60 @@ HAVING COUNT(*) > 1
 ORDER BY COUNT(*) DESC, Submissions.hacker_id ASC
 
 
+--Ollivander's Inventory
+--难点在于group by了之后怎么返回相应的id
+-- 只能求助于子查询
+SELECT id, age, coins_needed, dt1.power
+FROM
+    (SELECT code, power, MIN(coins_needed) as gaga
+    FROM Wands
+    GROUP BY code, power) dt1 
+    LEFT JOIN Wands 
+        ON dt1.code = Wands.code AND dt1.power = Wands.power AND dt1.gaga = Wands.coins_needed
+    LEFT JOIN Wands_Property 
+        ON Wands.code = Wands_Property.code
+    WHERE is_evil = 0
+ORDER BY dt1.power DESC, age DESC
 
 
+--Challenges
+--count比较简单，加了两个条件， 如果有重复的count并且不是max count，就删除
+--相当于count外面再套一个count
+/*
+此题框架本来应该很简单
+SELECT Hackers.hacker_id, Hackers.name, COUNT(*) AS cnt
+FROM Hackers
+    JOIN Challenges ON Hackers.hacker_id = Challenges.hacker_id
+GROUP BY Hackers.hacker_id, Hackers.name
+ORDER BY cnt DESC, Hackers.hacker_id
+先把这步做好
+蛋疼的是中间添加了cnt最多或者cnt of cnt =1的filter条件
+我们最终采用HAVING来对cnt的值进行filter， 注意count of count相当于套了两层select query， 容易出错    
+*/
+SELECT Hackers.hacker_id, Hackers.name, COUNT(*) AS cnt
+FROM Hackers
+    JOIN Challenges ON Hackers.hacker_id = Challenges.hacker_id
+
+GROUP BY Hackers.hacker_id, Hackers.name
+
+HAVING 
+    cnt = (     SELECT COUNT(*)
+                FROM Challenges
+                GROUP BY hacker_id
+                ORDER BY COUNT(*) DESC
+                LIMIT 1)
+    OR
+    cnt in (           
+            SELECT temp.aoao
+            FROM (
+                SELECT COUNT(*) AS aoao
+                FROM Challenges
+                GROUP BY hacker_id
+            ) temp
+            GROUP BY aoao
+            HAVING COUNT(temp.aoao) = 1)
+
+ORDER BY cnt DESC, Hackers.hacker_id
 
 
 
