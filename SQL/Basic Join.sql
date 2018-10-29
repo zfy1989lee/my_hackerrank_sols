@@ -157,4 +157,35 @@ ORDER BY cnt DESC, Hackers.hacker_id
 
 
 
-
+--Contest Leaderboard
+--两张表的嵌套而已
+/*
+表1 应该是求总分的写法
+SELECT Hackers.hacker_id, Hackers.name, SUM(score) as total_score
+FROM (
+    Hackers
+    JOIN 
+    Sumbmissions ON Hackers.hacker_id = score_dt.hacker_id
+)
+GROUP BY Hackers.hacker_id, Hackers.name
+HAVING total_score > 0
+ORDER BY total_score DESC, Hackers.hacker_id ASC
+但是，一个选手会submit多次， 我们只保留最高分， 所以，用来加重总分的表，应该是已经筛选过最高分的表
+也就是这样：
+SELECT hacker_id, MAX(score) as max_score
+FROM Submissions
+GROUP BY hacker_id, challenge_id
+然后用这个表作为子查询 替换上面的JOIN就OK了
+*/
+SELECT Hackers.hacker_id, Hackers.name, SUM(max_score) as total_score
+FROM (
+    Hackers
+    JOIN 
+    (SELECT hacker_id, MAX(score) as max_score
+    FROM Submissions
+    GROUP BY hacker_id, challenge_id) score_dt 
+    ON Hackers.hacker_id = score_dt.hacker_id
+)
+GROUP BY Hackers.hacker_id, Hackers.name
+HAVING total_score > 0
+ORDER BY total_score DESC, Hackers.hacker_id ASC
